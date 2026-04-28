@@ -4,48 +4,70 @@
  */
 window.InstaGem = window.InstaGem || {};
 window.InstaGem.Selector = {
-    /**
-     * Generates a unique CSS selector for a given element.
-     * Prioritizes ID, then stable attributes, then class names.
-     */
     getUniqueSelector(element) {
         if (!(element instanceof Element)) return null;
 
-        // 1. Try ID
-        if (element.id) {
-            return `#${element.id}`;
-        }
+        // 1. ALWAYS go to the interactive parent if it exists
+        const interactive = element.closest('button, a, [role="button"], [role="link"], input, select, textarea');
+        const target = interactive || element;
 
-        // 2. Try stable attributes (aria-label, title, name)
-        const stableAttrs = ['aria-label', 'title', 'name', 'placeholder'];
+        // 2. Try stable attributes (Top priority)
+        const stableAttrs = ['aria-label', 'title', 'placeholder', 'name', 'data-testid', 'data-nav'];
         for (const attr of stableAttrs) {
-            const val = element.getAttribute(attr);
+            const val = target.getAttribute(attr);
             if (val) {
-                return `${element.tagName.toLowerCase()}[${attr}="${val}"]`;
+                return `${target.tagName.toLowerCase()}[${attr}="${val}"]`;
             }
         }
 
-        // 3. Fallback to path-based selector (simplified)
-        return this.getPathSelector(element);
+        // 3. Try unique IDs (Filter out dynamic ones)
+        if (target.id && !this.isDynamicId(target.id)) {
+            return `#${target.id}`;
+        }
+
+        // 4. Use stable classes (Filter out hashes)
+        if (target.classList.length > 0) {
+            const stableClasses = Array.from(target.classList).filter(c => !this.isDynamicClass(c));
+            if (stableClasses.length > 0) {
+                const sel = `${target.tagName.toLowerCase()}.${stableClasses.join('.')}`;
+                if (this.isUnique(sel)) return sel;
+            }
+        }
+
+        // 5. Fallback to a very simple path
+        return this.getRobustPath(target);
     },
 
-    getPathSelector(el) {
+    isUnique(selector) {
+        try {
+            return document.querySelectorAll(selector).length === 1;
+        } catch(e) { return false; }
+    },
+
+    isDynamicId(id) {
+        // Match Instagram/React/Vue dynamic patterns
+        return /mount_|[:.]|^f[0-9]+|^[a-z0-9]{10,}$/i.test(id) || id.startsWith('ig-');
+    },
+
+    isDynamicClass(cls) {
+        // Classes like 'x1lliihq' (Instagram) are technically stable but hashes like 'abc123xyz' aren't
+        // We'll keep Instagram 'x...' classes but filter out very long random strings
+        return /^[a-z0-9]{12,}$/i.test(cls) || /^[0-9]/.test(cls);
+    },
+
+    getRobustPath(el) {
         const path = [];
-        while (el.nodeType === Node.ELEMENT_NODE) {
-            let selector = el.nodeName.toLowerCase();
-            if (el.id) {
-                selector += '#' + el.id;
-                path.unshift(selector);
-                break;
-            } else {
-                let sib = el, nth = 1;
-                while (sib = sib.previousElementSibling) {
-                    if (sib.nodeName.toLowerCase() === selector) nth++;
-                }
-                if (nth !== 1) selector += ":nth-of-type(" + nth + ")";
+        let curr = el;
+        while (curr && curr.nodeType === Node.ELEMENT_NODE && path.length < 3) {
+            let name = curr.nodeName.toLowerCase();
+            if (name === 'body' || name === 'html') break;
+            
+            let sib = curr, nth = 1;
+            while (sib = sib.previousElementSibling) {
+                if (sib.nodeName.toLowerCase() === name) nth++;
             }
-            path.unshift(selector);
-            el = el.parentNode;
+            path.unshift(name + (nth > 1 ? `:nth-of-type(${nth})` : ''));
+            curr = curr.parentNode;
         }
         return path.join(" > ");
     }

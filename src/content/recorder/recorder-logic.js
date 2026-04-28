@@ -25,18 +25,34 @@ window.InstaGem.Recorder = class Recorder {
     }
 
     addEventListeners() {
-        document.addEventListener('click', this.handleClick.bind(this), true);
+        document.addEventListener('mousedown', this.handleClick.bind(this), true);
         document.addEventListener('input', this.handleInput.bind(this), true);
     }
 
     removeEventListeners() {
-        document.removeEventListener('click', this.handleClick.bind(this), true);
+        document.removeEventListener('mousedown', this.handleClick.bind(this), true);
         document.removeEventListener('input', this.handleInput.bind(this), true);
+    }
+
+    shouldIgnore(target) {
+        // Ignore if the element is part of the InstaGem UI
+        let el = target;
+        while (el) {
+            if (el.id && el.id.startsWith('ig-')) return true;
+            if (el.tagName === 'INSTAGEM-UI') return true; // Just in case
+            if (el.shadowRoot) return true; // Most likely our overlay
+            el = el.parentElement || el.parentNode;
+        }
+        return false;
     }
 
     handleClick(event) {
         if (!this.isRecording) return;
+        if (this.shouldIgnore(event.target)) return;
+
         const selector = window.InstaGem.Selector.getUniqueSelector(event.target);
+        if (!selector) return;
+
         this.captureStep({
             type: 'click',
             selector: selector,
@@ -46,7 +62,11 @@ window.InstaGem.Recorder = class Recorder {
 
     handleInput(event) {
         if (!this.isRecording) return;
+        if (this.shouldIgnore(event.target)) return;
+
         const selector = window.InstaGem.Selector.getUniqueSelector(event.target);
+        if (!selector) return;
+
         this.captureStep({
             type: 'type',
             selector: selector,

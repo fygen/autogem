@@ -45,6 +45,7 @@
         }
         .btn:hover { background: #444; border-color: #3897f0; }
         .btn.active { background: #ed4956; border-color: #ff5a60; }
+        .btn.danger { background: #551111; border-color: #772222; color: #ffcccc; }
         .btn.secondary { background: #222; border-color: #444; color: #aaa; }
         
         .info {
@@ -74,10 +75,11 @@
 
     <button class="btn" id="record-btn">Start Recording</button>
     <button class="btn" id="play-btn">Play Script</button>
+    <button class="btn danger" id="stop-btn">Stop & Clear</button>
     <button class="btn secondary" id="generate-btn">Copy Console Code</button>
 
     <div class="info">
-        Actions recorded in the current tab will persist even after page refresh.
+        Actions recorded persist across page refreshes.
     </div>
 
     <script src="popup.js"></script>
