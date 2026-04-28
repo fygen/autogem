@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "InstaGem Automation Pro",
+  "version": "1.0.0",
+  "description": "Professional, human-like automation engine for web interactions.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "src/popup/index.html"
+  },
+  "background": {
+    "service_worker": "src/background/service-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "src/common/humanizer.js",
+        "src/content/utils/selector.js",
+        "src/content/ui/overlay.js",
+        "src/content/recorder/recorder-logic.js",
+        "src/content/player/player-logic.js",
+        "src/content/index.js"
+      ]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["src/content/ui/overlay.css"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
